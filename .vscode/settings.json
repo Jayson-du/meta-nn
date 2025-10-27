@@ -1,0 +1,12 @@
+{
+  // 仅在当前工作区测试触发问题，不影响全局用户设置
+  "doxdocgen.c.triggerSequence": "/?",
+  "doxdocgen.cpp.triggerSequence": "/**",
+  // 保持注释前缀一致
+  "doxdocgen.c.commentPrefix": "// ",
+  "doxdocgen.cpp.commentPrefix": "// ",
+  // 临时关闭 C++ 的按键即时格式化，防止回车时触发字符被 clang-format 吞掉
+  "[cpp]": {
+    "editor.formatOnType": false
+  }
+}
