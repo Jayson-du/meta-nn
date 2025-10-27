@@ -1,0 +1,19 @@
+CompileFlags:
+  Add: 
+    - -std=c++17
+    - -Wall
+    - -Wextra
+  Remove: 
+    - -Wc++17-extensions
+
+Diagnostics:
+  Suppress: 
+    - c++17-extensions
+    
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+Hover:
+  ShowAKA: true
