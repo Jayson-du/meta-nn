@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace MetaNN::Sequencetial {
+namespace MetaNN::Sequential {
 namespace NSCreate {
 template <typename L, typename R> struct Concat;
 
@@ -71,8 +71,8 @@ template <typename TCon, int N> struct At_;
 template <template <typename...> typename TCon, typename... TParams, int N>
 struct At_<TCon<TParams...>, N> {
 
-  using type = decltype(NSAT::impl<Helper::MakeIndexSequence<N>>::apply(
-      (TParams *)nullptr...));
+  using type = decltype(
+      NSAT::impl<Helper::MakeIndexSequence<N>>::apply((TParams *)nullptr...));
 };
 
 template <typename TCon, int N> using At = typename At_<TCon, N>::type;
@@ -108,4 +108,199 @@ struct Order_<TCon<TParams...>, TReq> {
 template <typename TCon, typename TReq>
 constexpr static int Order = Order_<TCon, TReq>::value;
 
-} // namespace MetaNN::Sequencetial
+// @brief : 在类型序列的第 'N' 个位置, 将原始的 'TN' 替换为一个类型 'TValue'
+namespace NSSet {
+
+// brief : 基础模板, 为后续特化做准备
+template <typename TCon, int N, typename TValue, typename TRemain,
+          typename = Helper::When<true>>
+struct imp_;
+
+// brief : 特化 N == 0 的情况
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue, TCon<T0, TRemain...>,
+            Helper::When<(N == 0)>> {
+  using type = TCon<TProcessed..., TValue, TRemain...>;
+};
+
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename T1, typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue, TCon<T0, T1, TRemain...>,
+            Helper::When<(N == 1)>> {
+  using type = TCon<TProcessed..., T0, TValue, TRemain...>;
+};
+
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename T1, typename T2,
+          typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue, TCon<T0, T1, T2, TRemain...>,
+            Helper::When<(N == 2)>> {
+  using type = TCon<TProcessed..., T0, T1, TValue, TRemain...>;
+};
+
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename T1, typename T2,
+          typename T3, typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue, TCon<T0, T1, T2, T3, TRemain...>,
+            Helper::When<(N == 3)>> {
+  using type = TCon<TProcessed..., T0, T1, T2, TValue, TRemain...>;
+};
+
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename T1, typename T2,
+          typename T3, typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue, TCon<T0, T1, T2, T3, TRemain...>,
+            Helper::When<(N >= 4) && (N < 8)>> {
+  using type = typename imp_<TCon<TProcessed..., T0, T1, T2, T3>, N - 4, TValue,
+                             TCon<TRemain...>>::type;
+};
+
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename T1, typename T2,
+          typename T3, typename T4, typename T5, typename T6, typename T7,
+          typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue,
+            TCon<T0, T1, T2, T3, T4, T5, T6, T7, TRemain...>,
+            Helper::When<(N >= 8) && (N < 16)>> {
+  using type =
+      typename imp_<TCon<TProcessed..., T0, T1, T2, T3, T4, T5, T6, T7>, N - 8,
+                    TValue, TCon<TRemain...>>::type;
+};
+
+template <template <typename...> typename TCon, int N, typename TValue,
+          typename... TProcessed, typename T0, typename T1, typename T2,
+          typename T3, typename T4, typename T5, typename T6, typename T7,
+          typename T8, typename T9, typename TA, typename TB, typename TC,
+          typename TD, typename TE, typename TF, typename... TRemain>
+struct imp_<TCon<TProcessed...>, N, TValue,
+            TCon<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, TA, TB, TC, TD, TE, TF,
+                 TRemain...>,
+            Helper::When<(N >= 16)>> {
+  using type = typename imp_<TCon<TProcessed..., T0, T1, T2, T3, T4, T5, T6, T7,
+                                  T8, T9, TA, TB, TC, TD, TE, TF>,
+                             N - 16, TValue, TCon<TRemain...>>::type;
+};
+} // namespace NSSet
+
+template <typename TCont, int N, typename TValue> struct Set_;
+
+template <template <typename...> typename TCont, int N, typename TValue,
+          typename... TParams>
+struct Set_<TCont<TParams...>, N, TValue> {
+  using type =
+      typename NSSet::imp_<TCont<>, N, TValue, TCont<TParams...>>::type;
+};
+
+template <typename TCont, int N, typename TValue>
+using Set = typename Set_<TCont, N, TValue>::type;
+
+// brief : Fold
+namespace NSFold {
+template <typename TState, template <typename, typename> typename F,
+          typename... TRemain>
+struct imp_ {
+  using type = TState;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0>
+struct imp_<TState, F, T0> {
+  using type = F<TState, T0>;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0, typename T1>
+struct imp_<TState, F, T0, T1> {
+  using type = F<F<TState, T0>, T1>;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0, typename T1, typename T2>
+struct imp_<TState, F, T0, T1, T2> {
+  using type = F<F<F<TState, T0>, T1>, T2>;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0, typename T1, typename T2, typename T3>
+struct imp_<TState, F, T0, T1, T2, T3> {
+  using type = F<F<F<F<TState, T0>, T1>, T2>, T3>;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0, typename T1, typename T2, typename T3, typename T4>
+struct imp_<TState, F, T0, T1, T2, T3, T4> {
+  using type = F<F<F<F<F<TState, T0>, T1>, T2>, T3>, T4>;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0, typename T1, typename T2, typename T3, typename T4,
+          typename T5>
+struct imp_<TState, F, T0, T1, T2, T3, T4, T5> {
+  using type = F<F<F<F<F<F<TState, T0>, T1>, T2>, T3>, T4>, T5>;
+};
+
+template <typename TState, template <typename, typename> typename F,
+          typename T0, typename T1, typename T2, typename T3, typename T4,
+          typename T5, typename T6, typename... TRemain>
+struct imp_<TState, F, T0, T1, T2, T3, T4, T5, T6, TRemain...> {
+  using type =
+      typename imp_<F<F<F<F<F<F<F<TState, T0>, T1>, T2>, T3>, T4>, T5>, T6>, F,
+                    TRemain...>::type;
+};
+} // namespace NSFold
+
+template <typename TInitState, typename TInputCont,
+          template <typename, typename> typename F>
+struct Fold_;
+
+template <typename TInitState, template <typename...> typename TCont,
+          typename... TParams, template <typename, typename> typename F>
+struct Fold_<TInitState, TCont<TParams...>, F> {
+  template <typename S, typename I> using FF = typename F<S, I>::type;
+
+  using type = typename NSFold::imp_<TInitState, FF, TParams...>::type;
+};
+
+template <typename TInitState, typename TInputCont,
+          template <typename, typename> typename F>
+using Fold = typename Fold_<TInitState, TInputCont, F>::type;
+
+// brief : PushBack, 在类型序列的末尾添加新的类型
+template <typename TCont, typename... TValue> struct PushBack_;
+
+template <template <typename...> typename TCont, typename... TParams,
+          typename... TValue>
+struct PushBack_<TCont<TParams...>, TValue...> {
+  using type = TCont<TParams..., TValue...>;
+};
+
+template <typename TCont, typename... TValue>
+using PushBack = typename PushBack_<TCont, TValue...>::type;
+
+// brief : Cascade, 连接两个类型序列
+template <typename TCont1, typename TCont2> struct Cascade_;
+
+template <template <typename...> typename TCont, typename... TParams1,
+          typename... TParams2>
+struct Cascade_<TCont<TParams1...>, TCont<TParams2...>> {
+  using type = TCont<TParams1..., TParams2...>;
+};
+
+// brief :
+template <typename TInCont, template <typename> typename F,
+          template <typename...> typename TOutCont>
+struct Transform_;
+
+template <template <typename...> typename TInCont, typename... TInputs,
+          template <typename> typename F,
+          template <typename...> typename TOutCont>
+struct Transform_<TInCont<TInputs...>, F, TOutCont> {
+  using type = TOutCont<typename F<TInputs>::type...>;
+};
+
+template <typename TInCont, template <typename> typename F,
+          template <typename...> typename TOutCont>
+using Transform = typename Transform_<TInCont, F, TOutCont>::type;
+
+} // namespace MetaNN::Sequential
