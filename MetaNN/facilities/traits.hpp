@@ -5,6 +5,8 @@
 #include <type_traits>
 #include <utility>
 
+// @brief: 类型萃取文件, 提供多种萃取器
+
 namespace MetaNN {
 
 // @brief : 类型萃取器
