@@ -1,5 +1,5 @@
 # 最低版本
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.10)
 
 # 工程名称
 project (MetaNN C CXX)
